@@ -1,5 +1,5 @@
 // Variables y funcionnes comunes
-let level = 3;
+let level = 1;
 let playerQuantity = 1;
 let player = "";
 let secondPlayer = "";
@@ -10,6 +10,7 @@ let textScore = "";
 let textScoreP2 = "";
 let textTimeGame = "";
 let gameTime = 0; 
+let musicStart = true;
 
 /* MOBIEL CONTROLS */
 let goLeftP1 = false;
@@ -17,7 +18,7 @@ let goRightP1 = false;
 let goUpP1 = false;
 
 let goLeftP2 = false;
-let goRightP2 = false;
+let goRightP2 = false; 
 let goUpP2 = false;
 /* --- */
 
@@ -41,16 +42,29 @@ class MainScene extends Phaser.Scene {
         this.load.image("controlsPlayer1", "img/Player1.png");
         this.load.image("controlsPlayer2", "img/Player2.png");
 
+        this.load.audio("background_music", "./sounds/Banana_Craziness.mp3");
+        this.load.audio("getStar", "./sounds/Rise06.mp3");
+        this.load.audio("crash", "./sounds/bzzzt.wav");
+
         this.load.spritesheet("dude", "img/dude.png", {frameWidth: 32, frameHeight: 48});
         this.load.spritesheet("secondPlayer", "img/secondPlayer.png", {frameWidth: 32, frameHeight: 48});
 
 
-        // this.load.spritesheet("penguin", "img/penguin.png", {frameWidth: 32, frameHeight: 32});
+        this.load.spritesheet("penguin", "img/penguin_.png", {frameWidth: 24, frameHeight: 32});
     }
  
     create(){
         //Aquí va la logia del juego. Eventos, coliciones, etc.
         //Tambine se ejectua una única vez, pero despues de preload.
+
+        if (musicStart){
+            musicStart = false;
+            const music = this.sound.add('background_music');
+            music.play({
+                volume: .3,
+                loop: true
+            })
+        }
 
         /* vertical position, horizontal position, name image.
         * setScale(2) indica que la imagen tnedrá el doble de su tamaño (1 es su valor por defecto y 0 desaparece la imagen).
@@ -69,20 +83,22 @@ class MainScene extends Phaser.Scene {
 
         /* MOBILE CONTROLLLS */ 
         if (screen.width <= 900){
-            this.add.image(100, 440, 'controlsPlayer1').setScale(.5);
+            this.add.image(155, 390, 'controlsPlayer1').setScale(.8).setDepth(1).alpha = 0.6;
             /* vertical, horizontal, alto, ancho */
-                let leftZonep1 = this.add.zone(17, 410, 50, 50);
+                let leftZonep1 = this.add.zone(22, 345, 80, 80);
                 leftZonep1.setOrigin(0);
                 leftZonep1.setInteractive();
+                // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(leftZonep1);
 
-                let rightZonep1 = this.add.zone(131, 410, 50, 50);
+                let rightZonep1 = this.add.zone(206, 345, 80, 80);
                 rightZonep1.setOrigin(0);
                 rightZonep1.setInteractive();
+                // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(rightZonep1);
 
-                let upZonep1 = this.add.zone(75, 384, 50, 50);
+                let upZonep1 = this.add.zone(114, 302, 80, 80);
                 upZonep1.setOrigin(0);
                 upZonep1.setInteractive();
-                this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(upZonep1);
+                // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(upZonep1);
             /* --- */
 
             /* EVENTS */
@@ -100,7 +116,6 @@ class MainScene extends Phaser.Scene {
             /* --- */
         }
         /* --- */ 
-
         
         // Crea el objeto con un JSON
         stars = this.physics.add.group({
@@ -132,7 +147,7 @@ class MainScene extends Phaser.Scene {
         }
         
         //Añade el sprite
-        player = this.physics.add.sprite(400, 256, 'dude');
+        player = this.physics.add.sprite(400, 256, 'penguin').setScale(1.5);
         // Impide que el jugador salga de la pantalla (no funciona con grupos de elementos)
         player.setCollideWorldBounds(true);
         // Rebote (no funciona con grupos de elementos)
@@ -156,21 +171,21 @@ class MainScene extends Phaser.Scene {
         /*Nombre, frames, velocidad de animacion, se repite infinito */
         this.anims.create({
             key: 'left',
-            frames: this.anims.generateFrameNumbers('dude', {start: 0, end:3}),
+            frames: this.anims.generateFrameNumbers('penguin', {start: 9, end: 11}),
             frameRate: 10,
             repeat: -1
         });
 
         this.anims.create({
             key: 'turn',
-            frames: [{key: 'dude', frame: 4}],
+            frames: [{key: 'penguin', frame: 7}],
             frameRate: 10,
             repeat: -1
         });
 
         this.anims.create({
             key: 'right',
-            frames: this.anims.generateFrameNumbers('dude', {start: 5, end: 8}),
+            frames: this.anims.generateFrameNumbers('penguin', {start: 3, end:5}),
             frameRate: 10,
             repeat: -1
         });
@@ -224,6 +239,11 @@ class MainScene extends Phaser.Scene {
         }
         
         function playerCollecStar (player, star){
+            const getStar = this.sound.add('getStar');
+            getStar.play({
+                volume: .5,
+                loop: false
+            });
             player.score += 10;
             textScore.setText("Score: "+player.score);
             reestartStars(star);
@@ -271,6 +291,15 @@ class MainScene extends Phaser.Scene {
 
         function endGame(player,context){
 
+            /* sound */
+                const crash = context.sound.add('crash');
+                crash.play({
+                    volume: .5,
+                    loop: false
+                });
+            /* --- */
+
+
             if (playerQuantity == 1){
                 context.physics.pause();
                 player.setTint(0xFF3A0F);
@@ -280,7 +309,7 @@ class MainScene extends Phaser.Scene {
                     delay: 1000,
                     loop: false,
                     callback: () => {
-                        context.scene.start("endScene");
+                        context.scene.start("gameScene");
                     } 
                 });
             }else {
@@ -335,27 +364,26 @@ class MainScene extends Phaser.Scene {
             var scanner = this.input.keyboard.createCursorKeys();
 
             if (scanner.left.isDown || goLeftP1){
-                player.anims.play('left', true);
                 player.setVelocityX(-160);
+                player.anims.play('left', true);
             }else if (scanner.right.isDown || goRightP1){
-                player.anims.play('right', true);
                 player.setVelocityX(160);
+                player.anims.play('right', true);
             }else {
-                player.anims.play('turn', true);
                 player.setVelocityX(0);
+                player.anims.play('turn', true);
             }
-
-            if ((scanner.space.isUp || goUpP1) && player.body.touching.down){
-                player.setVelocityY(900);
-                /* Salto con fuerza (solo funciona con isDown) */
-                /*console.log(salto_fuerza);
-                if (salto_fuerza >= 900){
-                    player.setVelocityY(900);
-                }else{
-                    player.setVelocityY(salto_fuerza+=50);
-                }     
-                }else{
-                    salto_fuerza = 0;
+            
+            if ((scanner.up.isDown || goUpP1) && player.body.touching.down){
+                player.setVelocityY(-450);
+                /* Salto con fuerza (solo funciona con isDown)
+                    if (salto_fuerza >= 900){
+                        player.setVelocityY(900);
+                    }else{
+                        player.setVelocityY(salto_fuerza+=50);
+                    }     
+                    }else{
+                        salto_fuerza = 0;
                 }*/
             }
         }else if (playerQuantity === 2){
