@@ -5,7 +5,24 @@ let player = "";
 let secondPlayer = "";
 let platforms = "";
 let stars = "";
-let score = 0;
+let bomb = "";
+let textScore = "";
+let textScoreP2 = "";
+let textTimeGame = "";
+let gameTime = 0; 
+
+/* MOBIEL CONTROLS */
+let goLeftP1 = false;
+let goRightP1 = false;
+let goUpP1 = false;
+
+let goLeftP2 = false;
+let goRightP2 = false;
+let goUpP2 = false;
+/* --- */
+
+// let salto_fuerza = 0; /* para el salto con carga */
+
 // Clases
 /* Escena principal del videojuego */
 class MainScene extends Phaser.Scene {
@@ -15,8 +32,8 @@ class MainScene extends Phaser.Scene {
 
     preload(){
         // Carga assets de la escena. Se ejecuta en primer lugar y una única vez
-        this.load.setBaseURL = "../";
-        this.load.image("jungla_fondo", "img/background.png");
+        // this.load.setPath = "../";
+        this.load.image("jungla_fondo", "img/BG.png");
         this.load.image("platform1", "img/platform1.png");
         this.load.image("ground", "img/platform4.png");
         this.load.image("star", "img/star.png");
@@ -26,6 +43,9 @@ class MainScene extends Phaser.Scene {
 
         this.load.spritesheet("dude", "img/dude.png", {frameWidth: 32, frameHeight: 48});
         this.load.spritesheet("secondPlayer", "img/secondPlayer.png", {frameWidth: 32, frameHeight: 48});
+
+
+        // this.load.spritesheet("penguin", "img/penguin.png", {frameWidth: 32, frameHeight: 32});
     }
  
     create(){
@@ -35,7 +55,7 @@ class MainScene extends Phaser.Scene {
         /* vertical position, horizontal position, name image.
         * setScale(2) indica que la imagen tnedrá el doble de su tamaño (1 es su valor por defecto y 0 desaparece la imagen).
         */
-        this.add.image(400, 265, 'jungla_fondo').setScale(2);
+        this.add.image(400, 265, 'jungla_fondo').setScale(.8);
         platforms = this.physics.add.staticGroup();
         platforms.create(190, 498, 'ground'); 
         platforms.create(380, 498, 'ground'); 
@@ -47,12 +67,50 @@ class MainScene extends Phaser.Scene {
         platforms.create(570, 528, 'ground'); 
         platforms.create(950, 528, 'ground'); 
 
+        /* MOBILE CONTROLLLS */ 
+        if (screen.width <= 900){
+            this.add.image(100, 440, 'controlsPlayer1').setScale(.5);
+            /* vertical, horizontal, alto, ancho */
+                let leftZonep1 = this.add.zone(17, 410, 50, 50);
+                leftZonep1.setOrigin(0);
+                leftZonep1.setInteractive();
+
+                let rightZonep1 = this.add.zone(131, 410, 50, 50);
+                rightZonep1.setOrigin(0);
+                rightZonep1.setInteractive();
+
+                let upZonep1 = this.add.zone(75, 384, 50, 50);
+                upZonep1.setOrigin(0);
+                upZonep1.setInteractive();
+                this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(upZonep1);
+            /* --- */
+
+            /* EVENTS */
+                leftZonep1.on('pointerdown', () => goLeftP1 = true);
+                leftZonep1.on('pointerup', () => goLeftP1 = false);
+                leftZonep1.on('pointerout', () => goLeftP1 = false);
+
+                rightZonep1.on('pointerdown', () => goRightP1 = true);
+                rightZonep1.on('pointerup', () => goRightP1 = false);
+                rightZonep1.on('pointerout', () => goRightP1 = false);
+
+                upZonep1.on('pointerdown', () => goUpP1 = true);
+                upZonep1.on('pointerup', () => goUpP1 = false);
+                upZonep1.on('pointerout', () => goUpP1 = false);
+            /* --- */
+        }
+        /* --- */ 
+
+        
         // Crea el objeto con un JSON
         stars = this.physics.add.group({
             key: 'star',
             repeat: 11, 
-            setXY: { x:100, y:0, stepX: 50}
+            setXY: { x:100, y: 0, stepX: 50}
         });
+        // Crear grupo bombas
+        let bombs = this.physics.add.group();
+
         // Bounce para cada uno de los elementos del grupo stars
         stars.children.iterate((child) => {
             child.setBounce(0.5);
@@ -73,53 +131,273 @@ class MainScene extends Phaser.Scene {
             platforms.create(700, 165, 'platform1');
         }
         
-        if (playerQuantity === 1){
-            //Añade el sprite
-            player = this.physics.add.sprite(400, 256, 'dude');
-            // Impide que el jugador salga de la pantalla (no funciona con grupos de elementos)
-            player.setCollideWorldBounds(true);
-            // Rebote (no funciona con grupos de elementos)
-            player.setBounce(0.5);
-        } else if (playerQuantity === 2){
-            player = this.physics.add.sprite(100, 256, 'dude');
-            secondPlayer = this.physics.add.sprite(700, 256, 'secondPlayer');
-            
-            player.setCollideWorldBounds(true);
-            secondPlayer.setCollideWorldBounds(true);
+        //Añade el sprite
+        player = this.physics.add.sprite(400, 256, 'dude');
+        // Impide que el jugador salga de la pantalla (no funciona con grupos de elementos)
+        player.setCollideWorldBounds(true);
+        // Rebote (no funciona con grupos de elementos)
+        player.setBounce(0.5);
+        player.score = 0;
+        player.setName = '1';
 
-            player.setBounce(0.5);
+        if (playerQuantity === 2){
+            secondPlayer = this.physics.add.sprite(700, 256, 'secondPlayer');
+            secondPlayer.setCollideWorldBounds(true);
             secondPlayer.setBounce(0.5);
+            secondPlayer.score = 0;
+            secondPlayer.setName = '2';
+
+            // Time
+            gameTime = 60;
+            textTimeGame = this.add.text(400, 16, gameTime, {fontFamily: 'font1', fontSize: "32px", fill: '#000'})
+            this.refreshTime();
         }
 
-        
+        /*Nombre, frames, velocidad de animacion, se repite infinito */
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('dude', {start: 0, end:3}),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'turn',
+            frames: [{key: 'dude', frame: 4}],
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('dude', {start: 5, end: 8}),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        textScore = this.add.text(30, 16, "Score: "+player.score, {fontSize: "32px", fill: '#000'});
+        // Animaciones
+        if (playerQuantity === 2){
+            /*Nombre, frames, velocidad de animacion, se repite infinito */
+            this.anims.create({
+                key: 'secondLeft',
+                frames: this.anims.generateFrameNumbers('secondPlayer', {start: 0, end:3}),
+                frameRate: 10,
+                repeat: -1
+            });
+
+            this.anims.create({
+                key: 'secondTurn',
+                frames: [{key: 'secondPlayer', frame: 4}],
+                frameRate: 10,
+                repeat: -1
+            });
+
+            this.anims.create({
+                key: 'secondRight',
+                frames: this.anims.generateFrameNumbers('secondPlayer', {start: 5, end: 8}),
+                frameRate: 10,
+                repeat: -1
+            });
+
+            textScoreP2 = this.add.text(555, 16, "Score P2: "+secondPlayer.score, {fontSize: "32px", fill: '#000'});
+        }
 
         // Colisiones
         this.physics.add.collider(player, platforms);
         this.physics.add.collider(secondPlayer, platforms);
         this.physics.add.collider(stars, platforms);
+        this.physics.add.collider(bombs, platforms);
+        this.physics.add.collider(bombs, bombs);
+        this.physics.add.collider(player, secondPlayer);
         /*
             * Overlap es cuando un objeto está encima del otro.
             * @objeto 1, @objeto 2, funcion (evento), funcion (antes de, ejemplo colision con, mientras que),
-            * this
-            */
-        this.physics.overlap(stars, player, this.collecStar, null, this);
-    }
+            * context: this
+        */
+        this.physics.add.overlap(player, stars, playerCollecStar, null, this);
+        this.physics.add.collider(player, bombs, playerCollideBomb, null, this);
+        this.physics.add.collider(secondPlayer, bombs, secondPlayerCollideBomb, null, this);
 
-    update(){
-        // Se ejecuta una y otra vez en un bucle infinito. Util para comprobaciones de teclado.
-        var scanner = this.input.keyboard.createCursorKeys();
+        if (playerQuantity == 2){
+            this.physics.add.overlap(secondPlayer, stars, secondPlayerCollecStar, null, this);
+        }
+        
+        function playerCollecStar (player, star){
+            player.score += 10;
+            textScore.setText("Score: "+player.score);
+            reestartStars(star);
+        }
 
-        if (scanner.left.isDown){
-            player.setVelocityX(-160);
-        }else if (scanner.right.isDown){
-            player.setVelocityX(160);
+        function secondPlayerCollecStar (secondPlayer, star){
+            secondPlayer.score += 10;
+            textScoreP2.setText("Score P2: "+secondPlayer.score);
+            reestartStars(star);
+        }
+
+        function reestartStars (star){
+            star.disableBody(true, true);
+            // Cuenta el numero de estrllas activas en pantalla.
+            if (stars.countActive(true) === 0){ 
+                    /*  Crear bomba
+                        * x, y, sprite
+                    */
+                    let bomb = bombs.create(Phaser.Math.Between(0, 800), 16, 'bomb');
+                    bomb.setBounce(1);
+                    bomb.setCollideWorldBounds(true);
+                    /* x velocity value, y velocity value  */
+                    bomb.setVelocity(Phaser.Math.Between(-400*level, 400*level) , 20);
+                    // ----
+                    stars.children.iterate((child) => {
+                    /*
+                        * reset: true, resetea tambien el body (lo vuelve a crear).
+                        * x: posicion en x.
+                        * y: posicion en y.
+                        * enableGameObject: true, habilita el body, false, lo deja visible pero sin colociones.
+                        * showGameObject: true, muestra el objeto, false lo deja oculto.
+                    */
+                    child.enableBody(false, child.x, 0, true, true);
+                })
+            }   
+        }
+
+        function playerCollideBomb (player, bombs){
+            endGame(player, this);
+        }
+
+        function secondPlayerCollideBomb (secondPlayer, bombs){
+            endGame(secondPlayer, this);
+        }
+
+        function endGame(player,context){
+
+            if (playerQuantity == 1){
+                context.physics.pause();
+                player.setTint(0xFF3A0F);
+                player.anims.play('turn');
+                /***/
+                context.time.addEvent({
+                    delay: 1000,
+                    loop: false,
+                    callback: () => {
+                        context.scene.start("endScene");
+                    } 
+                });
+            }else {
+                // player.setTint(0xFF3A0F);
+                if (player.score -50 > 0){
+                    player.score -= 50;
+                    if (player.setName == '1'){
+                        textScore.setText("Score: "+player.score);
+                    }else if (player.setName == '2'){
+                        textScoreP2.setText("Score P2: "+player.score);
+                    }
+                }else{
+                    player.score = 0;
+                    if (player.setName === '1'){
+                        textScore.setText("Score: 0");
+                    }else if (player.setName === '2'){
+                        textScoreP2.setText("Score P2: 0");
+                    }
+                }
+            }
         }
     }
 
-    collecStar (){
-        console.log("score");
-        score++;
-        console.log(score);
+    refreshTime() {
+        gameTime--;
+        textTimeGame.setText(gameTime);
+        
+        if (gameTime === 0){
+                this.physics.pause();
+                player.setTint(0xFF3A0F);
+                secondPlayer.setTint(0xFF3A0F);
+                player.anims.play('turn');
+                secondPlayer.anims.play('turn');
+                /***/
+                this.time.addEvent({
+                    delay: 1000,
+                    loop: false,
+                    callback: () => {
+                        this.scene.start("gameScene");
+                    } 
+                });
+        }else {
+            // Se llama a sí misma cada seugndo
+            this.time.delayedCall(1000, this.refreshTime, [], this);
+        }
+
+    }
+
+    // Se ejecuta una y otra vez en un bucle infinito. Util para comprobaciones de teclado.
+    update(){
+        if (playerQuantity === 1){
+            var scanner = this.input.keyboard.createCursorKeys();
+
+            if (scanner.left.isDown || goLeftP1){
+                player.anims.play('left', true);
+                player.setVelocityX(-160);
+            }else if (scanner.right.isDown || goRightP1){
+                player.anims.play('right', true);
+                player.setVelocityX(160);
+            }else {
+                player.anims.play('turn', true);
+                player.setVelocityX(0);
+            }
+
+            if ((scanner.space.isUp || goUpP1) && player.body.touching.down){
+                player.setVelocityY(900);
+                /* Salto con fuerza (solo funciona con isDown) */
+                /*console.log(salto_fuerza);
+                if (salto_fuerza >= 900){
+                    player.setVelocityY(900);
+                }else{
+                    player.setVelocityY(salto_fuerza+=50);
+                }     
+                }else{
+                    salto_fuerza = 0;
+                }*/
+            }
+        }else if (playerQuantity === 2){
+
+            // Player one
+            var scanner = this.input.keyboard.createCursorKeys();
+
+            if (scanner.left.isDown){
+                player.anims.play('left', true);
+                player.setVelocityX(-160);
+            }else if (scanner.right.isDown){
+                player.anims.play('right', true);
+                player.setVelocityX(160);
+            }else {
+                player.anims.play('turn', true);
+                player.setVelocityX(0);
+            }
+            if (scanner.up.isUp && player.body.touching.down){
+                player.setVelocityY(900);
+            }
+
+            // Second player
+            let KeyLeft = this.input.keyboard.addKey('A');
+            let KeyRight = this.input.keyboard.addKey('D');
+            let KeyUp = this.input.keyboard.addKey('W');
+
+            if (KeyLeft.isDown){
+                secondPlayer.anims.play('secondLeft', true);
+                secondPlayer.setVelocityX(-160);
+            }else if (KeyRight.isDown){
+                secondPlayer.anims.play('secondRight', true);
+                secondPlayer.setVelocityX(160);
+            }else {
+                secondPlayer.anims.play('secondTurn', true);
+                secondPlayer.setVelocityX(0);
+            }
+            /* -- */
+
+            if (KeyUp.isUp && secondPlayer.body.touching.down){
+                secondPlayer.setVelocityY(900);
+            }
+        }
     }
 }
 
@@ -200,13 +478,13 @@ class ControllsScene extends Phaser.Scene {
 }
 
 /* Fantalla de juego finalizado */
-class EndGamelScene extends Phaser.Scene {
+class EndGameScene extends Phaser.Scene {
     constructor(){
         super('endScene');
     }
 
     preload(){
-
+        
     }
 
     create(){
@@ -224,7 +502,7 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 530,
-    scene: [MainScene, MenuScene, LevelScene, ControllsScene, EndGamelScene, ModeScene],
+    scene: [MainScene, MenuScene, LevelScene, ControllsScene, EndGameScene, ModeScene],
     scale: {
         mode: Phaser.Scale.FIT
     },
@@ -237,4 +515,4 @@ const config = {
 }
 
 // Inicializacion del objeto
-new Phaser.Game(config)
+game = new Phaser.Game(config)
