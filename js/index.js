@@ -1,6 +1,6 @@
 // Variables y funcionnes comunes
 let level = 1;
-let playerQuantity = 1;
+let playerQuantity = 2;
 let player = "";
 let secondPlayer = "";
 let platforms = "";
@@ -11,6 +11,9 @@ let textScoreP2 = "";
 let textTimeGame = "";
 let gameTime = 0; 
 let musicStart = true;
+
+let gameLevel = "Easy.";
+let gameMode = "1 Player.";
 
 /* MOBIEL CONTROLS */
 let goLeftP1 = false;
@@ -512,11 +515,21 @@ class EndGameScene extends Phaser.Scene {
     }
 
     preload(){
-        
+        this.load.image("fondo", "img/BG.png");
+        this.load.image("JumpingMonkey", "img/JumpingMonkey.png");
     }
 
     create(){
+        this.add.image(400, 265, 'fondo').setScale(.8);
+        this.add.image(400, 65, 'JumpingMonkey');
 
+        this.add.text(100, 150, "Player 1: "+player.score+" points.", {fontSize: '32px', fill: '#fff'})
+        if (playerQuantity === 2){
+            this.add.text(100, 250, "Player 2: "+secondPlayer.score+" points.", {fontSize: '32px', fill: '#fff'})
+        }
+
+        this.add.text(100, 350, "Level: "+gameLevel, {fontSize: '32px', fill: '#fff'})
+        this.add.text(100, 450, "Mode: "+gameMode, {fontSize: '32px', fill: '#fff'})
     }
 
     update(){
@@ -530,7 +543,7 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 530,
-    scene: [MainScene, MenuScene, LevelScene, ControllsScene, EndGameScene, ModeScene],
+    scene: [EndGameScene ,MainScene , MenuScene, LevelScene, ControllsScene, ModeScene],
     scale: {
         mode: Phaser.Scale.FIT
     },
