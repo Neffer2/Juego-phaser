@@ -1,6 +1,6 @@
 // Variables y funcionnes comunes
 let level = 1;
-let playerQuantity = 2;
+let playerQuantity = 1;
 let player = "";
 let secondPlayer = "";
 let platforms = "";
@@ -9,10 +9,14 @@ let bomb = "";
 let textScore = "";
 let textScoreP2 = "";
 let textTimeGame = "";
+let textGameLevel = "";
+let textGameMode = "";
 let gameTime = 0; 
 let musicStart = true;
 
+let arrayLevels = ['Easy.', 'Medium.', 'Hard.'];
 let gameLevel = "Easy.";
+let arrayModes = ['1 Player.', '2 Players.']
 let gameMode = "1 Player.";
 
 /* MOBIEL CONTROLS */
@@ -34,27 +38,7 @@ class MainScene extends Phaser.Scene {
         super('gameScene');
     }
 
-    preload(){
-        // Carga assets de la escena. Se ejecuta en primer lugar y una única vez
-        // this.load.setPath = "../";
-        this.load.image("jungla_fondo", "img/BG.png");
-        this.load.image("platform1", "img/platform1.png");
-        this.load.image("ground", "img/platform4.png");
-        this.load.image("star", "img/star.png");
-        this.load.image("bomb", "img/bomb.png");
-        this.load.image("controlsPlayer1", "img/Player1.png");
-        this.load.image("controlsPlayer2", "img/Player2.png");
-
-        this.load.audio("background_music", "./sounds/Banana_Craziness.mp3");
-        this.load.audio("getStar", "./sounds/Rise06.mp3");
-        this.load.audio("crash", "./sounds/bzzzt.wav");
-
-        this.load.spritesheet("dude", "img/dude.png", {frameWidth: 32, frameHeight: 48});
-        this.load.spritesheet("secondPlayer", "img/secondPlayer.png", {frameWidth: 32, frameHeight: 48});
-
-
-        this.load.spritesheet("penguin", "img/penguin_.png", {frameWidth: 24, frameHeight: 32});
-    }
+    preload(){}
  
     create(){
         //Aquí va la logia del juego. Eventos, coliciones, etc.
@@ -87,6 +71,7 @@ class MainScene extends Phaser.Scene {
         /* MOBILE CONTROLLLS */ 
         if (screen.width <= 900){
             this.add.image(155, 390, 'controlsPlayer1').setScale(.8).setDepth(1).alpha = 0.6;
+            this.add.image(700, 390, 'jump').setScale(.3).setDepth(1).alpha = 0.6;
             /* vertical, horizontal, alto, ancho */
                 let leftZonep1 = this.add.zone(22, 345, 80, 80);
                 leftZonep1.setOrigin(0);
@@ -98,7 +83,7 @@ class MainScene extends Phaser.Scene {
                 rightZonep1.setInteractive();
                 // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(rightZonep1);
 
-                let upZonep1 = this.add.zone(114, 302, 80, 80);
+                let upZonep1 = this.add.zone(640, 328, 120, 125);
                 upZonep1.setOrigin(0);
                 upZonep1.setInteractive();
                 // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(upZonep1);
@@ -119,7 +104,7 @@ class MainScene extends Phaser.Scene {
             /* --- */
         }
         /* --- */ 
-        
+
         // Crea el objeto con un JSON
         stars = this.physics.add.group({
             key: 'star',
@@ -309,10 +294,10 @@ class MainScene extends Phaser.Scene {
                 player.anims.play('turn');
                 /***/
                 context.time.addEvent({
-                    delay: 1000,
+                    delay: 500,
                     loop: false,
                     callback: () => {
-                        context.scene.start("gameScene");
+                        context.scene.start("endScene");
                     } 
                 });
             }else {
@@ -351,7 +336,7 @@ class MainScene extends Phaser.Scene {
                     delay: 1000,
                     loop: false,
                     callback: () => {
-                        this.scene.start("gameScene");
+                        this.scene.start("endScene");
                     } 
                 });
         }else {
@@ -439,11 +424,103 @@ class MenuScene extends Phaser.Scene {
     }
 
     preload(){
+        // Carga assets de la escena. Se ejecuta en primer lugar y una única vez
+        // this.load.setPath = "../";
 
+        let progressBar = this.add.graphics();
+        let width = this.cameras.main.width;
+        let height = this.cameras.main.height;
+        let percentText = this.add.text((width/2)-50, (height/2)-5, 'Cargando... %0', {font: '18px monospace', fill: '#ffffff'});
+        let assetText = this.add.text(20, 500, '', {font: '18px monospace', fill: '#ffffff'});
+
+
+        /* trae data del progreso de carga */
+        this.load.on('progress', function (value){
+            percentText.setText("Cargando... "+parseInt(value * 100)+ "%");
+            progressBar.clear();
+            progressBar.fillStyle(0xfffff, 1);
+            progressBar.fillRect(0, 280, parseInt(value) * width, 10);
+        });
+
+        /* trae data de los assets que cargan */
+        this.load.on('fileprogress', function (file){
+            assetText.setText("Cargando: " + file.key);
+
+        })
+
+        this.load.on('complete', function (){
+            progressBar.destroy();
+            percentText.destroy();
+            assetText.destroy();
+        })
+
+        this.load.image("jungla_fondo", "img/BG.png");
+        this.load.image("platform1", "img/platform1.png");
+        this.load.image("ground", "img/platform4.png");
+        this.load.image("star", "img/star.png");
+        this.load.image("bomb", "img/bomb.png");
+        this.load.image("controlsPlayer1", "img/Player1.png");
+        this.load.image("controlsPlayer2", "img/Player2.png");
+        this.load.image("backButton", "img/Player2.png");
+        this.load.image("JumpingMonkey", "img/JumpingMonkey.png");
+        this.load.image("menu_buttons", "img/buttons.png");
+        this.load.image("level_buttons", "img/levelButtons.png");
+        this.load.image("mode_buttons", "img/modeButtons.png");
+        this.load.image("player1", "img/Player1text.png");
+        this.load.image("player2", "img/Player2text.png");
+
+        this.load.audio("background_music", "./sounds/Banana_Craziness.mp3");
+        this.load.audio("getStar", "./sounds/Rise06.mp3");
+        this.load.audio("crash", "./sounds/bzzzt.wav");
+
+        this.load.spritesheet("dude", "img/dude.png", {frameWidth: 32, frameHeight: 48});
+        this.load.spritesheet("secondPlayer", "img/secondPlayer.png", {frameWidth: 32, frameHeight: 48});
+        this.load.spritesheet("penguin", "img/penguin_.png", {frameWidth: 24, frameHeight: 32});
     }
 
     create(){
+        this.add.image(400, 265, 'jungla_fondo').setScale(.8);
+        this.add.image(400, 65, 'JumpingMonkey');
+        this.add.image(400, 315, 'menu_buttons').setScale(.9);
 
+        textGameLevel = this.add.text(20, 480, "Level: "+gameLevel, {fontSize: '16px', fill: '#fff'});
+        textGameMode = this.add.text(20, 500, "Mode: "+gameMode, {fontSize: '16px', fill: '#fff'});
+
+        /* vertical, horizontal, alto, ancho */
+            let startButton = this.add.zone(315, 135, 168, 80);
+            startButton.setOrigin(0);
+            startButton.setInteractive();
+
+            let levelButton = this.add.zone(315, 228, 168, 80);
+            levelButton.setOrigin(0);
+            levelButton.setInteractive();
+            // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(levelButton);
+
+            let modeButton = this.add.zone(315, 320, 168, 80);
+            modeButton.setOrigin(0);
+            modeButton.setInteractive();
+
+            let controlsButton = this.add.zone(315, 413, 168, 80);
+            controlsButton.setOrigin(0);
+            controlsButton.setInteractive();
+        /* --- */
+
+        /* EVENTS */
+            startButton.once('pointerdown', () => redirectScene('gameScene', this));
+            levelButton.once('pointerdown', () => redirectScene('levelScene', this));
+            modeButton.once('pointerdown', () => redirectScene('modeScene', this));
+            controlsButton.once('pointerdown', () => redirectScene('controllsScene', this));
+        /* --- */
+
+        function redirectScene(scene, context){
+            context.time.addEvent({
+                delay: 100,
+                loop: false,
+                callback: () => {
+                    context.scene.start(scene);
+                } 
+            });
+        }
     }
 
     update(){
@@ -458,7 +535,45 @@ class LevelScene extends Phaser.Scene {
     }
 
     preload(){
+        this.add.image(400, 265, 'jungla_fondo').setScale(.8);
+        this.add.image(400, 65, 'JumpingMonkey');
+        this.add.image(400, 315, 'level_buttons').setScale(.9);
 
+        textGameLevel = this.add.text(20, 480, "Level: "+gameLevel, {fontSize: '16px', fill: '#fff'});
+        textGameMode = this.add.text(20, 500, "Mode: "+gameMode, {fontSize: '16px', fill: '#fff'});
+
+        /* vertical, horizontal, alto, ancho */
+            let easyButton = this.add.zone(315, 135, 168, 80);
+            easyButton.setOrigin(0);
+            easyButton.setInteractive();
+
+            let mediumButton = this.add.zone(315, 228, 168, 80);
+            mediumButton.setOrigin(0);
+            mediumButton.setInteractive();
+
+            let hardButton = this.add.zone(315, 320, 168, 80);
+            hardButton.setOrigin(0);
+            hardButton.setInteractive();
+            // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(modeButton);
+
+            let backButton = this.add.zone(315, 413, 168, 80);
+            backButton.setOrigin(0);
+            backButton.setInteractive();
+        /* --- */
+
+        /* EVENTS */
+            easyButton.on('pointerdown', () => {changeLevel(1)});
+            mediumButton.on('pointerdown', () => {changeLevel(2)});
+            hardButton.on('pointerdown', () => {changeLevel(3)});
+            backButton.on('pointerdown', () => this.scene.start('menuScene'));
+        /* --- */
+
+        function changeLevel (level_){
+            level = level_;
+            gameLevel = arrayLevels[level_-1];
+            textGameLevel.setText("Level: "+gameLevel);
+            // this.add.text(20, 480, "Level: "+gameLevel, {fontSize: '16px', fill: '#fff'});            
+        }
     }
 
     create(){
@@ -477,7 +592,39 @@ class ModeScene extends Phaser.Scene {
     }
 
     preload(){
+        this.add.image(400, 265, 'jungla_fondo').setScale(.8);
+        this.add.image(400, 65, 'JumpingMonkey');
+        this.add.image(400, 315, 'mode_buttons').setScale(.9);
 
+        textGameLevel = this.add.text(20, 480, "Level: "+gameLevel, {fontSize: '16px', fill: '#fff'});
+        textGameMode = this.add.text(20, 500, "Mode: "+gameMode, {fontSize: '16px', fill: '#fff'});
+
+        /* vertical, horizontal, alto, ancho */
+            let player1Button = this.add.zone(315, 185, 168, 80);
+            player1Button.setOrigin(0);
+            player1Button.setInteractive();
+
+            let player2Button = this.add.zone(315, 275, 168, 80);
+            player2Button.setOrigin(0);
+            player2Button.setInteractive();
+
+            let backButton = this.add.zone(315, 368, 168, 80);
+            backButton.setOrigin(0);
+            backButton.setInteractive();
+            // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(backButton);
+        /* --- */
+
+        /* EVENTS */
+            player1Button.on('pointerdown', () => {changeMode(1)});
+            player2Button.on('pointerdown', () => {changeMode(2)});
+            backButton.on('pointerdown', () => this.scene.start('menuScene'));
+        /* --- */
+
+        function changeMode (level){
+            playerQuantity = level;
+            gameMode = arrayModes[level-1];
+            textGameMode.setText("Mode: "+gameMode);     
+        }
     }
 
     create(){
@@ -496,13 +643,34 @@ class ControllsScene extends Phaser.Scene {
     }
 
     preload(){
-
+       
     }
 
     create(){
+        this.add.image(400, 265, 'jungla_fondo').setScale(.8);
+        this.add.image(400, 65, 'JumpingMonkey');
 
+        this.add.image(180, 470, 'player1');
+        this.add.image(180, 265, 'controlsPlayer1');
+
+        this.add.image(620, 265, 'controlsPlayer2');
+        this.add.image(620, 470, 'player2');
+
+        let backZone = this.add.zone(0, 0, 800, 530);
+        backZone.setOrigin(0);
+        backZone.setInteractive();
+        backZone.once('pointerdown', () => redirectScene('menuScene', this));
+        
+        function redirectScene(scene, context){
+            context.time.addEvent({
+                delay: 100,
+                loop: false,
+                callback: () => {
+                    context.scene.start(scene);
+                } 
+            });
+        }
     }
-
     update(){
 
     }
@@ -515,12 +683,10 @@ class EndGameScene extends Phaser.Scene {
     }
 
     preload(){
-        this.load.image("fondo", "img/BG.png");
-        this.load.image("JumpingMonkey", "img/JumpingMonkey.png");
     }
 
     create(){
-        this.add.image(400, 265, 'fondo').setScale(.8);
+        this.add.image(400, 265, 'jungla_fondo').setScale(.8);
         this.add.image(400, 65, 'JumpingMonkey');
 
         this.add.text(100, 150, "Player 1: "+player.score+" points.", {fontSize: '32px', fill: '#fff'})
@@ -528,8 +694,26 @@ class EndGameScene extends Phaser.Scene {
             this.add.text(100, 250, "Player 2: "+secondPlayer.score+" points.", {fontSize: '32px', fill: '#fff'})
         }
 
-        this.add.text(100, 350, "Level: "+gameLevel, {fontSize: '32px', fill: '#fff'})
+        textGameLevel = this.add.text(100, 350, "Level: "+gameLevel, {fontSize: '32px', fill: '#fff'})
         this.add.text(100, 450, "Mode: "+gameMode, {fontSize: '32px', fill: '#fff'})
+
+        let backZone = this.add.zone(0, 0, 800, 530);
+        backZone.setOrigin(0);
+        backZone.setInteractive();
+        backZone.once('pointerdown', () => redirectScene('menuScene', this));
+        // this.add.graphics().lineStyle(2, 0xffff).strokeRectShape(backZone);
+
+        // this.scene.start('scene'):
+
+        function redirectScene(scene, context){
+            context.time.addEvent({
+                delay: 100,
+                loop: false,
+                callback: () => {
+                    context.scene.start(scene);
+                } 
+            });
+        }
     }
 
     update(){
@@ -543,7 +727,7 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 530,
-    scene: [EndGameScene ,MainScene , MenuScene, LevelScene, ControllsScene, ModeScene],
+    scene: [MenuScene, MainScene, LevelScene, ControllsScene, ModeScene, EndGameScene],
     scale: {
         mode: Phaser.Scale.FIT
     },
